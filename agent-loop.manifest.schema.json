@@ -1,0 +1,343 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/kaiserguy/agent-project-template/agent-loop.manifest.schema.json",
+  "title": "Agent loop manifest",
+  "description": "Per-repo declaration of everything the stack-agnostic prompt pack needs to know. The prompts, hooks, gates and skills in this template contain NO stack-specific commands; they resolve every command through this file. A subscribing repo ships exactly one of these at its root as agent-loop.manifest.yml.",
+  "type": "object",
+  "required": [
+    "schema",
+    "pack_version",
+    "repo",
+    "branches",
+    "commands",
+    "escalation",
+    "model"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1,
+      "description": "Manifest schema version. Bumped only for breaking shape changes."
+    },
+    "pack_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "The prompt-pack version this repo is currently synced to. sync/check-pack-version.js compares this against the template's VERSION and opens a re-render PR when the template is ahead — updates are inherited by re-rendering the pack against this manifest, not by hand-adapting a copy. This is the pin that makes propagation pull-based, and the version check-render-equivalence.js renders against."
+    },
+    "repo": {
+      "type": "object",
+      "required": [
+        "owner",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "host": {
+          "enum": [
+            "github"
+          ],
+          "default": "github"
+        },
+        "shared_clone": {
+          "type": "string",
+          "description": "Absolute path to the ONE clone that concurrent sessions share. hooks/block-shared-clone-git.js refuses every mutating git verb aimed here. Mutating a shared clone from a session has corrupted concurrent work in practice (ai-questions, 2026-07-10 and 2026-W29) — this is not a theoretical guard. NOT required at the top level: a freshly spawned repo has no local clone yet, and the path is machine-specific. The shared-clone-guard capability declares it in its own `requires`, so check-capabilities.js enforces it exactly when it matters."
+        },
+        "worktrees_rel": {
+          "type": "string",
+          "default": ".claude/worktrees",
+          "description": "Session worktree root, relative to shared_clone. Paths under it are SANCTIONED workspaces and are explicitly not treated as the shared clone."
+        }
+      }
+    },
+    "branches": {
+      "type": "object",
+      "required": [
+        "integration",
+        "production",
+        "integration_deploys_to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "integration": {
+          "type": "string",
+          "description": "The branch loops may merge to autonomously. All PRs target this."
+        },
+        "production": {
+          "type": "string",
+          "description": "Never merged to by any loop, under any circumstance."
+        },
+        "integration_deploys_to": {
+          "type": "string",
+          "description": "Human-readable name of what an integration merge deploys to, e.g. 'staging'. REQUIRED: prompts quote it unconditionally when telling a reviewer what is already live, so omitting it ships a dangling placeholder. If a merge deploys nothing, say 'nothing' — an explicit 'nothing' is a fact the reviewer can use; a missing key is a hole in the sentence. Leaving it WRONG is how a reviewer ends up reviewing the wrong stream."
+        },
+        "production_deploys_to": {
+          "type": "string"
+        }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "description": "THE stack-agnostic seam. Every command any prompt, skill, or gate tells an agent to run is declared here and referenced by KEY, never inlined. gates/verify-affordances.js executes each one and fails if it does not run — the deterministic answer to a prompt naming a check that has silently done nothing for weeks. `gate` and `carve_out` are REQUIRED KEYS because prompts across the pack reference them unconditionally; set either to null if the repo genuinely lacks it, but SAY SO. Requiring the key while permitting a null value is deliberate — it makes absence a declaration rather than an omission, which is the difference between a decision and an oversight.",
+      "additionalProperties": false,
+      "properties": {
+        "gate": {
+          "$ref": "#/$defs/command",
+          "description": "The fast, path-aware pre-push gate. The single command an agent runs before claiming a change is verified."
+        },
+        "gate_full": {
+          "$ref": "#/$defs/command"
+        },
+        "test_unit": {
+          "$ref": "#/$defs/command"
+        },
+        "test_real": {
+          "$ref": "#/$defs/command",
+          "description": "Real-execution tier (not mocks). If a repo has one, prompts MUST distinguish it from test_unit — a green mock suite proves mock-level behavior only."
+        },
+        "syntax": {
+          "$ref": "#/$defs/command"
+        },
+        "lint": {
+          "$ref": "#/$defs/command",
+          "description": "Set to null when the repo has no working linter. Declaring null is REQUIRED and is strictly better than naming a broken one: verify-affordances.js will then stop prompts from citing lint as a completed check."
+        },
+        "cantfail": {
+          "$ref": "#/$defs/command",
+          "description": "Detector for tests that cannot fail (no unconditional assertions)."
+        },
+        "carve_out": {
+          "$ref": "#/$defs/command",
+          "description": "Classifies a path as high-risk. Must be RUN, never re-derived from prose — a hand-written carve-out list that drifted narrower than the gate is a recorded cause of unlabeled high-risk merges (ai-questions #779/#780)."
+        },
+        "install": {
+          "$ref": "#/$defs/command"
+        },
+        "build": {
+          "$ref": "#/$defs/command"
+        },
+        "agent_run": {
+          "$ref": "#/$defs/command",
+          "description": "How to invoke the agent harness non-interactively on a prompt file, for measurement rather than for work. Read by evals/run-eval.js, which substitutes {prompt_file}. REQUIRED by the eval-corpus capability: without it, behavioural prompt findings cannot be measured and therefore must not ship. This key was missing here until 2026-W31 while run-eval.js and capabilities.json both already referenced it, which made eval-corpus impossible to enable without failing schema validation — and so made every behavioural finding permanently unshippable in every subscriber."
+        }
+      },
+      "required": [
+        "gate",
+        "carve_out"
+      ]
+    },
+    "carve_outs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Advisory mirror of the high-risk surface for hooks that warn at edit time. NOT authoritative — commands.carve_out is. Kept only so a warning can fire before a command is available."
+    },
+    "governance_files": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "claude-*.md",
+        ".claude/hooks/**",
+        ".claude/settings.json",
+        "agent-loop.manifest.yml"
+      ],
+      "description": "Files the loop must never autonomously author or auto-merge — the rules that bind it. A loop able to rewrite its own constraints has no constraints."
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "default": "loop-escalation"
+        },
+        "human_gate_label": {
+          "type": "string",
+          "default": "needs-prod-review"
+        },
+        "blocked_when_open": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Issue numbers that, while OPEN, mean a capability is structurally unavailable (e.g. a review-quota outage). Loops read these BEFORE spending a metered resource, rather than inferring the mode from how a result looks."
+        },
+        "log_issue": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The standing issue in THIS repo where the daily review posts each run's summary as a comment and where the Director reads them. OPTIONAL but every prompt that names it will leave an unresolved placeholder until it is declared — which is the intended nudge: the review has no other durable destination, and until 2026-08-15 the pack template hardcoded its own repo's issue number here, so every subscriber that rendered it was told to post to an issue in another repository."
+        },
+        "hotline_trigger_id": {
+          "type": "string",
+          "pattern": "^trig_[A-Za-z0-9]+$",
+          "description": "ID of a poke-only scheduler Routine (no cron, no run_once_at — it fires only on demand) that a blocked loop run fires via the scheduler's fire_trigger tool for same-hour triage, instead of waiting for the weekly governance pass. The triage session it spawns holds loop-level authority only. OPTIONAL: when absent, the escalation-hotline prompt section renders away and label-and-wait remains the loop's only escalation path."
+        },
+        "human_gate_scope": {
+          "type": "string",
+          "enum": [
+            "integration",
+            "production"
+          ],
+          "description": "What the human-gate label MEANS here, because two live subscribers disagree and both are right for themselves. `integration`: a PR carrying the label may not merge into branches.integration until a human clears it — a merge past it is a guardrail breach (the pack's original semantics; ai-questions). `production`: the label marks a change that needs a human before it is PROMOTED to branches.production, and does NOT hold an integration merge (lifelift-mobile-backend, whose develop-merges are autonomous by design and whose owner gates only prod). Prompts render the value inline and apply the matching rule. OPTIONAL; when absent, prompts that name it leave an unresolved placeholder rather than guessing — the earlier state, where the pack silently assumed `integration`, was the fatal contradiction the adoption diff found."
+        }
+      },
+      "required": [
+        "label",
+        "human_gate_label"
+      ],
+      "description": "Escalation and human-gate labels. Both label keys are REQUIRED because prompts reference them unconditionally; a manifest omitting one ships a prompt with a dangling placeholder."
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Back-link to the control plane that specified this project, written by bootstrap.js from project.yml. Carries `ideaId`, the control-plane `repo`, and `portfolioIssue`. Kept in the manifest as well as the README because a monthly checkpoint reads the spawned repo alongside its spec to ask whether the built scope is still the specced scope — and a machine-readable link survives a README rewrite that a prose one does not.",
+      "properties": {
+        "ideaId": {
+          "type": "string"
+        },
+        "repo": {
+          "type": "string"
+        },
+        "portfolioIssue": {
+          "type": "integer"
+        }
+      }
+    },
+    "capabilities": {
+      "description": "Which pack features this repo installs. Either a list of enabled ids, or an object mapping id -> boolean. Prefer the OBJECT form and record deliberate declines as `false`: an explicit false is a decision, an omission is an oversight, and gates/check-capabilities.js can only tell them apart if you say so. Validated against capabilities.json, which carries each feature's maturity, the condition under which it applies, and when to skip it.",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      ]
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "current": {
+          "type": "string",
+          "description": "Model the loop runs on, e.g. 'claude-opus-5'. review/ compares this against the reviewer's validated-against field and marks behavioral rules stale on mismatch instead of silently trusting them."
+        },
+        "commit_trailer": {
+          "type": "string",
+          "description": "Trailer appended to every commit the loop authors, e.g. 'Co-Authored-By: ...'. REQUIRED: the loop prompt's hard constraints reference it unconditionally, and attribution that silently stops being applied is the kind of gap nobody notices until an audit."
+        },
+        "accepted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Other model ids whose attribution is valid here, beyond `current`. OPTIONAL, and it exists because `current` was modelled as a constant and is not one: a session can be moved to a different model server-side, mid-run, with nobody having decided anything. check-model-attribution accepts a trailer naming `current` OR any id listed here; a trailer naming a model in neither still fails, and a missing trailer still fails. Do NOT list models you might someday adopt — list what actually produces work here, because review/ still compares only `current` against validated-against, so every id added here is one whose behavioural claims nothing re-validates."
+        }
+      },
+      "required": [
+        "current",
+        "commit_trailer"
+      ],
+      "description": "Which model the loop runs on, and how its commits are attributed. REQUIRED at the top level: `current` is what review/ compares against the reviewer's validated-against field, and without it a model upgrade silently invalidates every behavioural rule with nothing to detect it."
+    },
+    "render_overrides": {
+      "type": "array",
+      "description": "Structured declared overrides applied by renderPrompt AFTER rendering, at any pin, whether the prompt is committed or inherited at run time (issue #113; the unbuilt half of #12). A subscriber's local rule lives HERE as data — which file, which section, what text, on whose authority — never as a hand-edited line in a rendered copy: a byte-exact re-render deleted an owner-enabled review rule that lived that way (#85). An override whose section the template no longer has makes the render THROW; a stale override is drift the render refuses rather than silently drops.",
+      "items": {
+        "type": "object",
+        "required": [
+          "file",
+          "section",
+          "mode"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "Template path as the pack names it, e.g. prompts/loop-monitor.md (basename accepted)."
+          },
+          "section": {
+            "type": "string",
+            "description": "Heading line to act on, matched by prefix against the RENDERED heading text; must match exactly one heading (e.g. \"## STAGE 2\")."
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "append",
+              "prepend",
+              "remove"
+            ],
+            "description": "replace = the body under the heading (heading kept); append = after the body; prepend = right after the heading; remove = heading and body."
+          },
+          "text": {
+            "type": "string",
+            "description": "The local rule, verbatim. Ignored for remove."
+          },
+          "why": {
+            "type": "string",
+            "description": "Why this repo differs — the documented unique need or the remediation drift, for the reader and C17."
+          },
+          "authority": {
+            "type": "string",
+            "description": "Who decided it and when — an owner quote with date, or the Director verdict that recorded it. Not interpreted; the C6 accounting reads it."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "command": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "run"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "run": {
+              "type": "string",
+              "description": "Shell command. May contain {file} / {files} placeholders."
+            },
+            "cwd": {
+              "type": "string",
+              "description": "Directory to run in, relative to repo root."
+            },
+            "probe": {
+              "type": "string",
+              "description": "A COMPLETE cheap command (not a suffix) that verify-affordances.js runs to prove the tool RESOLVES — e.g. 'npx --no-install eslint --version'. Required whenever 'run' contains a {file} placeholder. Distinguishes 'the check ran and found problems' from 'the check could not run at all' — the distinction whose absence let a dead linter pass as a passing gate for ~25 days."
+            },
+            "expect_exit": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "default": [
+                0
+              ]
+            }
+          }
+        },
+        {
+          "type": "null",
+          "description": "Explicitly absent. Required rather than omitted, so absence is a declaration instead of an oversight."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "app-sites",
+  "private": true,
+  "description": "Public web pages for LifeLift Software apps (GitHub Pages). No build; the only dependency is the pack gates' js-yaml.",
+  "scripts": {
+    "precommit": "node gates/precommit.js",
+    "check:html": "node scripts/check-html.js --all",
+    "check:css": "node scripts/check-css.js assets/site.css"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0"
+  }
+}
