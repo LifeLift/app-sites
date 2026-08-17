@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "pack_version": "0.9.1",
+  "repo": {
+    "owner": "LifeLift",
+    "name": "app-sites",
+    "host": "github",
+    "shared_clone": "C:/Users/kaise/github/app-sites",
+    "worktrees_rel": ".claude/worktrees"
+  },
+  "branches": {
+    "integration": "develop",
+    "production": "main",
+    "integration_deploys_to": "nothing — main is the live GitHub Pages site; develop is staging with no deploy",
+    "production_deploys_to": "GitHub Pages (source: main, path /), custom domain wickstacks.lifelift.app once DNS resolves"
+  },
+  "commands": {
+    "gate": {
+      "run": "npm run precommit"
+    },
+    "syntax": {
+      "run": "node scripts/check-html.js {file}",
+      "probe": "node scripts/check-html.js --self-test"
+    },
+    "lint": null,
+    "test_unit": null,
+    "test_real": null,
+    "build": null,
+    "cantfail": {
+      "run": "node gates/detect-cantfail-tests.js"
+    },
+    "carve_out": {
+      "run": "node gates/carve-out-paths.js {file}",
+      "probe": "node gates/carve-out-paths.js README.md"
+    },
+    "install": {
+      "run": "npm install --no-audit --no-fund"
+    }
+  },
+  "carve_outs": [
+    ".github/workflows/**"
+  ],
+  "governance_files": [
+    "CLAUDE.md",
+    "claude-*.md",
+    ".claude/hooks/**",
+    ".claude/settings.json",
+    "agent-loop.manifest.json",
+    "prompts/**"
+  ],
+  "escalation": {
+    "label": "loop-escalation",
+    "human_gate_label": "needs-prod-review",
+    "blocked_when_open": [],
+    "log_issue": 1,
+    "human_gate_scope": "production",
+    "hotline_trigger_id": "trig_0184dk7KYXYZ2Jhgk7SHzBH5"
+  },
+  "model": {
+    "current": "claude-fable-5",
+    "commit_trailer": "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+  },
+  "capabilities": {
+    "session-orientation-hook": true,
+    "affordance-verification": true,
+    "carve-out-classifier": true,
+    "hook-pointer-gate": true,
+    "governance-file-protection": true,
+    "carveout-edit-warning": true,
+    "path-aware-precommit": true,
+    "cantfail-gate": true,
+    "shared-clone-guard": true,
+    "adversarial-internal-review": true,
+    "escalation-hotline": true,
+    "pack-sync": false,
+    "skill-frontmatter-gate": false,
+    "real-execution-tier": false,
+    "outage-gate": false,
+    "eval-corpus": false,
+    "metered-delegation": false,
+    "assumption-roulette": false,
+    "pr-event-subscription": false
+  }
+}
