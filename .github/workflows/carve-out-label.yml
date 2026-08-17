@@ -1,0 +1,62 @@
+name: carve-out-label
+
+# The human-gate label, enforced by the platform instead of by prompt. Copied from
+# kaiserguy/daily-nonogram (develop, 2026-08-17), same semantics.
+#
+# This check runs the same classifier the prompts name (`gates/carve-out-paths.js`,
+# positional, over the PR's changed files) and fails when a carve-out or governance
+# surface changed and the PR does not carry the label. It is a required status check on
+# `develop` and `main`, so a red here holds the merge for everyone, including admins.
+#
+# Add-only: this check never removes the label and never passes a labelled PR that no
+# longer matches — the label is a human's to clear. Nothing here decides who reviews;
+# it only guarantees the PR is visibly marked as needing one.
+#
+# In this repo `escalation.human_gate_scope` is `production`: the label marks what needs
+# a human before promotion to `main`. A promotion PR (develop → main) always carries it.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  carve-out-label:
+    name: carve-out-label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+
+      # No `npm install`: the classifier reads only agent-loop.manifest.json and Node built-ins.
+      - name: Classify every changed file; require the label on a match
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          LABEL: needs-prod-review
+        run: |
+          set -u
+          gh pr diff "$PR" --name-only > changed.txt
+          echo "changed files: $(wc -l < changed.txt)"
+          matched=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            if ! node gates/carve-out-paths.js "$f" > out.txt 2>&1; then
+              matched=1
+              grep -E '^hit=' out.txt || cat out.txt
+            fi
+          done < changed.txt
+          if [ "$matched" -eq 0 ]; then
+            echo "no carve-out or governance surface changed — label not required"
+            exit 0
+          fi
+          if gh pr view "$PR" --json labels --jq '.labels[].name' | grep -qx "$LABEL"; then
+            echo "high-risk surface changed and '$LABEL' is present — held for a human, as it should be"
+            exit 0
+          fi
+          echo "::error::high-risk surface changed and PR #$PR does not carry '$LABEL'. Add the label; do not strip it later."
+          exit 1
