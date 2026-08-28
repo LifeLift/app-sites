@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main]
+
+# Static site: no build, no test suite. `verify` is the same path-aware gate an agent runs
+# locally (npm run precommit → scripts/check-html.js / check-css.js on the changed pages +
+# the can't-fail detector). `gates` proves the manifest's declared commands still resolve,
+# the capabilities are reconciled, and the session hook asserts no fact it does not own.
+# Both are required status checks on develop and main.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # precommit diffs against the integration base
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci --no-audit --no-fund
+      - run: npm run precommit
+      # The gate is path-aware and a docs-only diff runs no page check; on a branch push
+      # (no PR base) it may see no changed files at all. Check every page regardless — this
+      # is cheap and it is the whole point of the repo.
+      - run: node scripts/check-html.js --all
+      - run: node scripts/check-css.js assets/site.css
+
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      # Probing an uninstalled tree measures the install, not the tool.
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node gates/verify-affordances.js --repo . --manifest agent-loop.manifest.json
+      - run: node gates/check-capabilities.js --manifest agent-loop.manifest.json --repo .
+      - run: node gates/check-hook-pointers.js .claude/hooks

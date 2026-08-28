@@ -1,0 +1,4 @@
+{
+  "$comment": "SHRINK-ONLY baseline for gates/detect-cantfail-tests.js. Entries are grandfathered can't-fail tests and may only ever be REMOVED. This repo started empty and strict (2026-08-17): it has no test suite, and any test added later must carry a real assertion from day one.",
+  "entries": []
+}

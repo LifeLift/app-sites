@@ -1,0 +1,597 @@
+{
+  "$comment": "Registry of everything this pack can install. A subscribing repo enables a subset in its manifest under `capabilities`. Nothing here is mandatory except what `default: on` marks, because a guard that is load-bearing in one repo is pure noise in another — a shared-clone guard means nothing to a repo with a single checkout, and a metered-delegation economics dial means nothing to a repo with no metered agent.",
+  "schema": 1,
+  "status_meaning": {
+    "mature": "Backed by a measured before/after or a recorded incident it demonstrably prevents, AND — for a capability that ships an artifact (provides non-empty) — that artifact is present and enabled at some subscriber's integration ref (installed_in non-empty, never the pack itself). A prose-only capability (provides: []) cannot be installed anywhere; its maturity is inherited from originated_in and is exactly as trustworthy as those repos' bespoke experience — say so when citing it. Adopt without ceremony.",
+    "beta": "Running somewhere real, but with a known gap, a recorded regression, or unvalidated assumptions — OR proven only where it originated and not yet as the pack ships it. Adopt deliberately and read `caveat`.",
+    "experimental": "Built here; not yet proven in production anywhere. It may already be installed_in a subscriber (installation is how it becomes proven) but has no measured result. Adopt only if you intend to be the one measuring it.",
+    "_fields": "originated_in: repos where the evidence for this capability was born and where a BESPOKE version runs — the pack's ancestors, not its output. installed_in: subscribers where the PACK'S artifact is present and enabled at their integration branch, as measured by gates/check-subscribers.js. Until 2026-08-15 one field (proven_in) conflated the two, and every maturity claim rested on repos the pack does not ship to while the repos it does ship to contributed zero evidence. Both must be roster ids from subscribers.json."
+  },
+  "capabilities": [
+    {
+      "id": "session-orientation-hook",
+      "status": "mature",
+      "default": "on",
+      "summary": "SessionStart hook printing pointers to the repo's truth files, gates, and hazards.",
+      "applies_when": "Always. Every agent session starts cold.",
+      "requires": [
+        "branches.integration",
+        "branches.production",
+        "commands.gate"
+      ],
+      "provides": [
+        "hooks/session-start.js"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend",
+        "ai-questions"
+      ],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Prevents a recorded incident: a hook that ASSERTED a credential location drifted from the file that owned it and put a false path in front of every session in lifelift-mobile-backend until 2026-07-24. The pointer-only rule plus gates/check-hook-pointers.js is the fix. Installed and enabled at both shipping subscribers' integration refs (measured 2026-08-15). Until 2026-08-15 this entry had no evidence field — it was mature on a proven_in name-drop alone; the incident was filed under caveat.",
+      "cost": "~250-300 always-loaded tokens per session.",
+      "caveat": "Must print POINTERS, never asserted values. A hook that states a fact can drift against the file it duplicates — that exact failure put a false credential location in front of every session in lifelift-mobile-backend until 2026-07-24. gates/check-hook-pointers.js enforces this. The hook prints POINTERS, so it needs somewhere to point: an always-loaded file must exist or the capability is decorative. Enforced via requires_path — measured 2026-08-02, both subscribers had this enabled with the hook registered and NO CLAUDE.md or AGENTS.md anywhere, and every gate reported clean.",
+      "skip_when": "Never. If you skip it, put the same pointers in an always-loaded instruction file instead.",
+      "requires_path": [
+        "CLAUDE.md|AGENTS.md"
+      ]
+    },
+    {
+      "id": "shared-clone-guard",
+      "status": "beta",
+      "default": "conditional",
+      "summary": "PreToolUse default-deny guard refusing every mutating git verb aimed at a clone that concurrent sessions share, while permitting each session's own worktree.",
+      "applies_when": "Multiple agent sessions run concurrently against worktrees of ONE clone.",
+      "detect": {
+        "manifest_set": "repo.shared_clone"
+      },
+      "requires": [
+        "repo.shared_clone",
+        "repo.worktrees_rel"
+      ],
+      "provides": [
+        "hooks/block-shared-clone-git.js",
+        "hooks/block-shared-clone-git.test.js"
+      ],
+      "originated_in": [
+        "ai-questions"
+      ],
+      "installed_in": [],
+      "evidence": "Prevents a recorded class of incident (concurrent-session work corrupted 2026-07-10 and 2026-W29). Its PowerShell coverage gap was measured on 2026-07-24: 41 failing cases before the fix, 0 after, no false positives. DEMOTED mature->beta 2026-08-15 by the originated_in/installed_in split: the incident evidence is real but lives in ai-questions' bespoke hook, and the PACK'S artifact is enabled in neither shipping subscriber (both declare shared-clone-guard: false at their integration ref). Proven where it originated; unproven as shipped. Re-promote when installed_in is non-empty.",
+      "cost": "One node process per Bash/PowerShell tool call (~30ms). Fails OPEN on error, so a broken guard never blocks work.",
+      "caveat": "Register it for EVERY shell tool your harness exposes, not just Bash. Gating on Bash alone left the rule unenforced on the primary shell of a Windows host. An MCP git tool would still bypass it.",
+      "skip_when": "Single checkout, or sessions never share a clone. Then it is pure overhead."
+    },
+    {
+      "id": "carveout-edit-warning",
+      "status": "beta",
+      "default": "conditional",
+      "summary": "PreToolUse advisory when an edit targets a high-risk deploy/CI-gating path.",
+      "applies_when": "The repo has paths whose modification must not happen on autopilot.",
+      "detect": {
+        "manifest_nonempty": "carve_outs"
+      },
+      "requires": [
+        "carve_outs"
+      ],
+      "provides": [
+        "hooks/warn-carveout-edit.js"
+      ],
+      "originated_in": [
+        "ai-questions"
+      ],
+      "installed_in": [],
+      "cost": "One node process per Edit/Write.",
+      "caveat": "Deliberately a WARN, not a BLOCK — legitimate carve-out work must still be possible. It is advisory only: the authoritative classifier is `commands.carve_out`, and a hand-maintained prefix list WILL drift narrower than the real gate. That drift is exactly what let two workflow-touching PRs merge unlabeled in ai-questions (#779/#780).",
+      "skip_when": "You have a CI label gate already and prefer a single enforcement point. The CI gate is authoritative either way; this only shortens the feedback loop."
+    },
+    {
+      "id": "affordance-verification",
+      "status": "mature",
+      "default": "on",
+      "summary": "Executes every command the manifest declares and fails if it cannot run; scans prompts for undeclared stack commands. Also validates that every [CAPABILITY: id] marker in prompts and skills names a real capability.",
+      "applies_when": "Always. Any prompt that names a check can have that check silently die.",
+      "requires": [
+        "commands"
+      ],
+      "provides": [
+        "gates/verify-affordances.js",
+        "gates/check-capability-markers.js",
+        "gates/check-manifest-refs.js"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Reproduces the lifelift eslint failure — a named check that linted nothing for ~25 days (#532) while every loop run reported work as verified. Measured: broken lint declared -> exit 1 with the real diagnostic; declared null -> exit 0.",
+      "cost": "Runs each declared command once. Seconds, not minutes, if probes are cheap.",
+      "caveat": "Probe {file} commands against a real canary file, never `--version`. An earlier revision probed with `--version` and reported the broken linter as HEALTHY — it missed the exact bug it exists to catch, because version printing works fine and only config resolution fails.",
+      "skip_when": "Never, if any prompt names any command."
+    },
+    {
+      "id": "skill-frontmatter-gate",
+      "status": "mature",
+      "default": "conditional",
+      "summary": "Verifies each skill's always-loaded description survives YAML parsing, states when to use the skill, and does not collide with a sibling.",
+      "applies_when": "The repo defines skills.",
+      "detect": {
+        "path_exists": [
+          ".claude/skills",
+          "skills"
+        ]
+      },
+      "provides": [
+        "gates/lint-skill-frontmatter.js"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Measured: 3 findings against ai-questions' unpatched skills, 0 after the fix, clean no-op where no skills exist. Catches the YAML plain-scalar `#` truncation that silently removed 73% of one description including its entire trigger clause.",
+      "cost": "Milliseconds. No dependencies.",
+      "skip_when": "No skills defined. It is a clean no-op then anyway."
+    },
+    {
+      "id": "governance-file-protection",
+      "status": "mature",
+      "default": "on",
+      "summary": "The loop may not autonomously author or auto-merge changes to the files that constrain it.",
+      "applies_when": "Always, for any autonomous loop.",
+      "requires": [
+        "governance_files"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend"
+      ],
+      "installed_in": [],
+      "evidence": "Added in lifelift after a red-team pass found the hole. ai-questions still lacks it: its carve-out classifier returns no match for `claude-*.md` or `.claude/hooks/**`, so a PR editing the guard hooks themselves would be labeled clean and auto-merged.",
+      "cost": "None at runtime. Prose rule plus a path-table entry.",
+      "caveat": "Prose alone is not enough — add the paths to your carve_out classifier so it is deterministic. A loop able to rewrite its own constraints has no constraints.",
+      "skip_when": "Never for an autonomous loop. Irrelevant if every merge is human-gated."
+    },
+    {
+      "id": "outage-gate",
+      "status": "mature",
+      "default": "conditional",
+      "summary": "Before spending a metered or rate-limited resource, read a tracker issue's state to decide whether the capability is structurally available. Never infer the mode from how a result looks.",
+      "applies_when": "The loop spends a metered external resource that can be exhausted org-wide.",
+      "detect": {
+        "manifest_nonempty": "escalation.blocked_when_open"
+      },
+      "requires": [
+        "escalation.blocked_when_open"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend"
+      ],
+      "installed_in": [],
+      "evidence": "Written after a loop was found spending metered review requests into a reviewer that had been quota-dead for days, because the pause instruction lived 80 lines below the stage that spends, and nothing told the agent how to determine the mode.",
+      "cost": "One API read per run.",
+      "skip_when": "Nothing you spend is metered or exhaustible."
+    },
+    {
+      "id": "cantfail-gate",
+      "status": "mature",
+      "default": "on",
+      "summary": "Rejects tests with no unconditional assertions, on a shrink-only baseline. A test that cannot fail reads as green forever.",
+      "applies_when": "Agents write tests in this repo.",
+      "requires": [
+        "commands.cantfail"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend",
+        "ai-questions"
+      ],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "cost": "Seconds per run.",
+      "caveat": "Shrink-only is the point: baseline entries that stop violating must be removed (stale grandfathering is itself debt), and new violations never enter the baseline via the gate. Semantics are ported from the siblings — check the file header for the exact assertion-detection rule before arguing with a verdict.",
+      "skip_when": "No test suite AND no intention of one — but then the repo should say so, not carry a dead gate.",
+      "provides": [
+        "gates/detect-cantfail-tests.js"
+      ],
+      "evidence": "Ported 2026-07-26 from the convergent lifelift/ai-questions detectors (both wired into their precommit and PR gates). Spawned repos start with an EMPTY baseline — strict from the first test, so the grandfathered-debt problem the source repos had to manage never begins."
+    },
+    {
+      "id": "real-execution-tier",
+      "status": "beta",
+      "default": "conditional",
+      "summary": "A zero-credential local stack that runs the real app, so agents can verify behavior mocks cannot reach.",
+      "applies_when": "The repo has behavior (auth, cookies, sessions, boot order) that a mocked suite cannot exercise.",
+      "requires": [
+        "commands.test_real",
+        "commands.test_unit"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend",
+        "ai-questions"
+      ],
+      "installed_in": [],
+      "evidence": "DEMOTED mature->beta 2026-08-15: no measured before/after and no recorded incident had ever been written down for it — the entry was mature on originated_in alone, which the maturity check now rejects. Both founding repos run a bespoke version; that experience is real but unrecorded here, and a prose-only capability (provides: []) has no artifact whose installation could stand in for it. Re-promote when an incident it prevented, or a measurement, is recorded in this field.",
+      "caveat": "Its value is entirely in the prompts SAYING that a green mock suite proves mock-level behaviour only. A repo can have this tier and still have every agent mock what it could execute, because nothing told them it exists. Requires BOTH commands: the contrast is the point, and a prompt naming only one of them cannot draw it.",
+      "skip_when": "A pure library with no runtime environment to stand up."
+    },
+    {
+      "id": "adversarial-internal-review",
+      "status": "beta",
+      "default": "off",
+      "summary": "A subagent posts an adversarial review verdict on a PR, satisfying the merge gate when an external reviewer is unavailable.",
+      "applies_when": "The external reviewer is unavailable and merges would otherwise stall indefinitely.",
+      "originated_in": [
+        "ai-questions"
+      ],
+      "installed_in": [],
+      "evidence": "Ran in ai-questions and FAILED TWICE in its first days, both recorded: an off-PR verdict the gate could not see, and a merge on verdicts that had reviewed an older commit.",
+      "caveat": "Only adopt with all three properties, which are what those failures cost: VISIBLE (the verdict is a comment on the PR itself, never a run summary or subagent transcript), BINDING (a verdict naming blockers blocks the merge), and SHA-BOUND (a verdict does not cover commits pushed after it). Without all three it is a rubber stamp that looks like a gate.",
+      "skip_when": "Your external reviewer is reliable, or a human gates merges. This is a fallback, not an upgrade."
+    },
+    {
+      "id": "metered-delegation",
+      "status": "beta",
+      "default": "off",
+      "summary": "Delegate backlog issues to an external coding agent that bills per use, with an economics dial governing when to delegate versus hand-implement.",
+      "applies_when": "A metered external coding agent is available AND its marginal cost differs materially from the loop's own.",
+      "originated_in": [
+        "lifelift-mobile-backend"
+      ],
+      "installed_in": [],
+      "caveat": "The dial is genuinely repo-specific and inverts on billing changes: under a flat-rate subscription for the loop and per-use billing for the external agent, hand-implementation is the default and delegation is reserved for parallelism or long mechanical work. Copy the mechanism, never the dial setting. Also: if the external agent opens drafts by default, something must un-draft finished ones — otherwise delegation halts silently and looks like idleness.",
+      "skip_when": "No metered external agent, or its cost is not a constraint."
+    },
+    {
+      "id": "assumption-roulette",
+      "status": "mature",
+      "default": "off",
+      "summary": "Deterministic picker for the least-tested, most-load-bearing source file: untested-first, then churn, then size. The test-WRITING half stays with the agent; the tests written must EXECUTE the target, never mock it into vacuity.",
+      "applies_when": "The repo has untested surface area and a working test runner.",
+      "detect": {
+        "manifest_set": "commands.test_unit"
+      },
+      "originated_in": [
+        "lifelift-mobile-backend",
+        "ai-questions"
+      ],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "caveat": "Produces a steady stream of small commits. Valuable, but budget for the review load it creates.",
+      "skip_when": "Coverage is already enforced by a stricter mechanism.",
+      "provides": [
+        "gates/assumption-roulette.js"
+      ],
+      "evidence": "Picker ported 2026-07-26 from the convergent lifelift/ai-questions assumption-roulette scripts; fixture-validated and spot-checked read-only against the real lifelift tree at porting time. Measured in production 2026-08-07 across both proven_in repos: 183 recorded rounds (2026-07-12..2026-08-07), 59% (ai-questions) and 64% (lifelift) falsified at least one assumption; roughly a fifth to a quarter of rounds surfaced a serious user-facing/production/security defect. Recorded incidents it caught include the offline service worker whose precache 404s meant it never installed for any user (ai-questions assumptions/records/2026-07-12-core-public-offline-resource-monitor-js.md, its FIRST round) and a push-notification opt-in POSTing to a route that does not exist — a silent no-op for every user, with a mock-only test claiming coverage (lifelift assumptions/records/2026-07-17-public-scripts-offline-support.js.md)."
+    },
+    {
+      "id": "eval-corpus",
+      "status": "beta",
+      "default": "off",
+      "summary": "Before/after harness running a real task with and without a prompt change, in isolated worktrees, with a deterministic pass check.",
+      "applies_when": "You intend to change BEHAVIORAL prompt rules — anything justified by a claim about how the model responds.",
+      "requires": [
+        "commands.agent_run"
+      ],
+      "provides": [
+        "evals/run-eval.js",
+        "evals/check-corpus-ground-truth.js",
+        "evals/corpus"
+      ],
+      "originated_in": [
+        "lifelift-mobile-backend"
+      ],
+      "installed_in": [],
+      "evidence": "Run end-to-end on 2026-07-24 against lifelift-mobile-backend on claude-opus-5: 3 cases x 2 arms x 3 reps = 18 real runs. It OVERTURNED a High-severity audit finding (F6) that inspection had recommended landing — the arm with the change used ~80% more tokens and ~70% more turns on the task it most affects, with no overlap between the arms token ranges, and lost a local fact that caused a correctness failure. Inspection had predicted the opposite.",
+      "caveat": "Exercised so far only with KNOWLEDGE-PROBE cases (ask a question, assert over the answer with grep), not full implementation tasks with a build/test verdict. Those are cheaper and were enough to overturn one finding, but they do not measure whether an agent can still DO the work. Until implementation cases run, treat a clean result as weaker evidence than a dirty one: it is easier to keep answering questions correctly than to keep building correctly. A corpus rots silently: every case asserts a repo fact that can later be FIXED, after which the case grades against stale ground truth while still emitting numbers that look measured. Each case must declare ground_truth_check + ground_truth_expect_status, verified by evals/check-corpus-ground-truth.js in the gate suite. Include at least one control case whose correct answer is \"nothing is wrong\" — a corpus of pure defect-hunts cannot distinguish improved detection from a raised false-positive rate.",
+      "skip_when": "You only ever make factual corrections — wrong paths, dead commands, stale branch names. Those are settled by reading the repo and need no eval."
+    },
+    {
+      "id": "pack-sync",
+      "status": "experimental",
+      "default": "on",
+      "summary": "Subscriber pins a pack version; its existing scheduled loop opens a re-render PR when the template moves ahead.",
+      "applies_when": "The repo was spun from this template and has a scheduled loop.",
+      "requires": [
+        "pack_version"
+      ],
+      "provides": [
+        "sync/check-pack-version.js"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Version comparison and reporting are tested in both states (current -> exit 0, behind -> exit 10). First end-to-end sweep ran 2026-08-01 from the scheduled pack review: enumerated subscribers from the idea-factory control plane, measured drift (daily-nonogram 0.8.0 behind 0.8.1; factory-platform current; ai-questions and the three lifelift repos carry no manifest — they are the FOUNDING subscribers, rostered in subscribers.json and reported OWED by gates/check-subscribers.js until they adopt; an earlier version of this sentence read their missing manifest as \"not subscribers\", which is the inference the roster exists to make impossible), and opened one pack-update PR. Still experimental: the sweep was driven by the template's scheduled review, NOT by a subscriber's own loop, which is the path this capability actually claims.",
+      "caveat": "INHERITANCE, NOT ADAPTATION. Apply an update by RE-RENDERING the changed pack files against your own manifest — do not hand-adapt a copy. The pack is stack-agnostic and your repo is not, but renderPrompt resolves every stack-specific value (commands.*, branches.*, escalation.*, governance_files, repo.*) from the manifest, so a rendered file has nothing left to adapt by hand. Measured: re-rendering both live subscribers' prompts AND skills at each one's own pinned version produced 12 of 12 files byte-identical, +0/-0. The old adapt-never-copy rule was charging for that seam twice — one fail-open carve-out fix cost six hand-edits in daily-nonogram and eight in factory-platform because each subscriber carried its own rendered copy of every prompt. Local deviation is a DECLARED OVERRIDE, never a silent hand edit: today that means deleting the file's rendered-by-bootstrap marker line, which gates/check-render-equivalence.js lists as an override rather than counting as drift. Priced honestly — the same absent marker tells bootstrap to re-render the file, so an override declared this way is respected by the gate but is NOT protected from the next scaffold run, and it is invisible upstream. Structured per-section overrides are proposed in issue #12 and not built.",
+      "skip_when": "You intend to fork and diverge deliberately."
+    },
+    {
+      "id": "carve-out-classifier",
+      "status": "mature",
+      "default": "on",
+      "summary": "Machine-readable classifier answering whether a path is high-risk. The authoritative source for carve-out and governance decisions.",
+      "applies_when": "Always, for any loop that merges autonomously.",
+      "requires": [
+        "carve_outs"
+      ],
+      "provides": [
+        "gates/carve-out-paths.js"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Validated against real path sets: correctly classifies workflow, CI-script, validation, governance-prompt, hook and settings paths, and passes ordinary source files. Exists because a PROSE carve-out drifted narrower than reality in ai-questions and let two workflow-touching PRs merge unlabeled (#779/#780).",
+      "cost": "Milliseconds. No dependencies — runs before npm install is known to work.",
+      "caveat": "There is deliberately NO exclusion/negation list: one plausible exception is how a carve-out quietly stops carving. If a specific change inside a carve-out is safe, that is a human call on that PR, not a rule. It FAILS CLOSED — an unreadable manifest or bad pattern reports matched=true, because \"we could not check\" must never be reported as \"it is fine\". INVOKE IT POSITIONALLY: `carve-out-paths.js {file}`. `--files` names a file CONTAINING one path per line, so the `--files {file}` form the scaffold shipped until 0.8.2 classified the changed file's CONTENTS and returned matched=false on real carve-outs — fail-closed machinery wired to fail open. Measured 2026-08-01 on daily-nonogram: `.github/workflows/ci.yml` positional -> matched=true exit 1, `--files` -> matched=false exit 0.",
+      "skip_when": "Every merge is human-gated, so nothing needs classifying."
+    },
+    {
+      "id": "hook-pointer-gate",
+      "status": "mature",
+      "default": "on",
+      "summary": "Fails the build when an always-loaded hook ASSERTS where a named value lives, instead of pointing at the document that owns it.",
+      "applies_when": "The repo has a SessionStart hook.",
+      "requires": [],
+      "provides": [
+        "gates/check-hook-pointers.js"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Measured against the real defect: flags lifelift-mobile-backend session-start.sh:16 exactly as it shipped (the false BASELINE_USER_PASSWORD location that contradicted CLAUDE.md in every context window), passes the corrected version, and produces zero false positives across both repos hooks.",
+      "cost": "Milliseconds.",
+      "caveat": "Scans only EMITTED strings, not code. An earlier revision matched whole lines and flooded on process.env.X while MISSING the real bug, whose line ended \"never copy values\" and tripped a blanket negation exemption. The only exemption now is an explicit negation bound to the path (\"X is NOT in <path>\").",
+      "skip_when": "No always-loaded hook."
+    },
+    {
+      "id": "project-bootstrap",
+      "status": "beta",
+      "default": "on",
+      "summary": "Consumes a project.yml manifest (idea-factory schema v1) and configures a repository: milestones, labels, seed issues, scaffold, and an origin back-link. Supports mode:new-repo and mode:existing-repo. Also adopts the pack into an EXISTING repo (bootstrap/init.js) by detecting stack and commands.",
+      "applies_when": "The repo is spawned from a control plane that emits project.yml manifests.",
+      "requires": [],
+      "provides": [
+        "bootstrap/bootstrap.js",
+        "bootstrap/lib/github.js",
+        "bootstrap/lib/scaffold.js",
+        "bootstrap/init.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Both acceptance dry runs from idea-factory#11 pass against the checked-in fixtures: daily-puzzle (new-repo) yields 6 milestones / 4 labels / 23 issues; dynamic-qr (existing-repo) creates NO repo, scaffolds apps/qr only, withholds all repo-level files, and yields 24 issues. Idempotency proven read-only against a repo with 356 existing issues: existing milestone, label and issue all skipped, new ones planned. init.js validated against a live repo: it independently reproduced audit finding F11, declaring lint:null because probing the real command (not --version) showed it does not resolve.",
+      "cost": "One gh API read per resource class, paginated. Dry run is free and is the default.",
+      "caveat": "DRY RUN IS THE DEFAULT; --execute is required to mutate. Two known limits, both stated rather than hidden: (1) issue dedupe keys on (title, milestone), so two products in one monorepo sharing a title AND milestone would collide and the second be skipped — add labels to the key if real manifests ever do that; (2) the scaffold path for mode:new-repo is not derivable from the manifest today (apps/forms appears only in issue-body prose), pending a target.path decision on idea-factory#11.",
+      "skip_when": "The repo was not spawned from a manifest-emitting control plane."
+    },
+    {
+      "id": "path-aware-precommit",
+      "status": "beta",
+      "default": "on",
+      "summary": "Path-aware pre-push gate: categorizes the changed-file set via precommit.config.json and runs only the checks each category earns, plus always-on repo-wide gates. The single command behind commands.gate.",
+      "applies_when": "Any repo where agents push code. Both source repos converged on this shape independently.",
+      "requires": [
+        "commands.gate"
+      ],
+      "provides": [
+        "gates/precommit.js",
+        "docs/PRECOMMIT.md"
+      ],
+      "originated_in": [],
+      "installed_in": [
+        "daily-nonogram",
+        "factory-platform"
+      ],
+      "evidence": "Ported 2026-07-26 from lifelift scripts/precommit.js and ai-questions scripts/precommit.js — convergent production implementations, each evolved against real incidents. The port was fixture-validated and adversarially reviewed at porting time; not yet proven by a spawned repo running it in anger.",
+      "cost": "Seconds for a typical diff — that is the point; the blunt lint-everything chain it replaces is what makes agents skip gates.",
+      "caveat": "The category config is REPO-OWNED and must grow with the repo: a category table that stops matching new directories silently degrades to fallback. Distinguishes check-FAILED from check-COULD-NOT-RUN (TOOLING) in output — treat TOOLING as an escalation, never a skip. Must never invoke verify-affordances probing (which runs the gate): scan-only, or recursion.",
+      "skip_when": "A repo with a single-command build where categorization buys nothing."
+    },
+    {
+      "id": "claims-vs-diff-gate",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Fails a PR whose body makes an explicit factual claim the diff contradicts — 'no schema change', 'no new dependencies', 'docs-only', or a labelled LOC figure.",
+      "applies_when": "Changes arrive as pull requests whose bodies are read by humans, or by agents that trust them.",
+      "detect": {
+        "path_exists": ".github/workflows"
+      },
+      "provides": [
+        "gates/check-claims-vs-diff.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #4, which measured that roughly a QUARTER of 15 review blockers in one downstream round were mechanical artifact contradictions needing no model — a body claiming 'no DB schema change, no migration' beside a diff adding CREATE INDEX, and a stated LOC delta 8.5x understated. Verified against a seeded fixture: four false claims, four findings; the same claims on a diff that honours them, zero. No repo has yet run it on real traffic, so it is experimental despite the origin evidence being measured.",
+      "cost": "Milliseconds plus one git diff. No model, no network.",
+      "caveat": "Claim-parsing is itself pattern matching. It compares STRUCTURED FACTS only (does the diff touch *.sql, contain DDL, add a parsed dependency key, touch a non-doc file) and matches only explicit unambiguous phrasings — hedged prose and claims inside code fences are deliberately ignored, because a false-positive gate that agents learn to route around is worse than no gate. It FAILS CLOSED on an empty diff: no claim can be contradicted by nothing, so an empty range means a bad --base, not a pass. The first revision of the dependency check used line-shape regex and silently missed single-line JSON; it now key-diffs the parsed manifest.",
+      "skip_when": "PR bodies are not read by anyone and nothing downstream trusts them."
+    },
+    {
+      "id": "stale-reference-gate",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Fails a PR that deletes a URL or route which an owner-facing document, untouched by the change, still tells a human to use.",
+      "applies_when": "The repo contains owner-facing documents that name routes, URLs, or config keys.",
+      "detect": {
+        "path_exists": "docs"
+      },
+      "provides": [
+        "gates/check-stale-references.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #6 checkpoint 5. Origin incident: a merged launch plan instructed the owner to point paid advertising at a removed route returning 404, with the correction living only in a PR comment. Verified against a reconstruction of that incident (route deleted, plan untouched -> 1 finding, exit 1) and four traps: literal moved/reformatted, doc updated in the same change, route added rather than removed, and empty diff -> exit 2.",
+      "cost": "Milliseconds plus one git diff and a grep over tracked docs. No model, no network.",
+      "caveat": "DISTINCT FROM claims-vs-diff-gate and easily confused with it: that gate only inspects files the diff TOUCHES, while this failure lives in a file the diff does NOT touch. An earlier revision of the claims gate cited this very incident in its header as if it covered it; it never did. Extracts from REMOVED lines only, and excludes any literal also present in ADDED lines, or every reindent would report its own contents as stale. Narrow by design — full URLs and multi-segment paths above a length floor only, because a finding nobody believes is worse than no finding.",
+      "skip_when": "No owner-facing prose names routes or URLs, or every document is regenerated from code."
+    },
+    {
+      "id": "citation-verification",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Verifies path:line citations in an agent report or PR body against the real repo, including that any quoted excerpt actually appears on the cited line.",
+      "applies_when": "Agents produce reports or PR bodies that cite the repo as evidence, and a human or another agent acts on those citations.",
+      "detect": {
+        "path_exists": ".github/workflows"
+      },
+      "provides": [
+        "gates/check-citations.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #6 checkpoint 2. Origin incident: an agent asserted a premise about user-authored text to the owner that the two actual call sites refuted — it was describing the issue text, not the code. Asking 'did you read the call sites?' invites a free yes; a quoted citation is falsifiable. Verified with fabricated quotes against real files (caught), programmatically-extracted true quotes (passed), nonexistent paths and past-EOF lines (caught), and a sweep of every tracked text file in the repo (0 findings).",
+      "cost": "Milliseconds. One git ls-files plus a read of each cited file. No model, no network.",
+      "caveat": "Demands EVIDENCE, not assent — that asymmetry is the whole mechanism, so do not soften the quote matching. Matching is case-sensitive and substring-exact; only whitespace runs and curly quotes are normalised. Absence of a quote is NOT a finding by default (absence of a claim is not a claim), and --require-quote is for checkpoints whose prompt explicitly demanded evidence; defaulting it on turns every ordinary path reference into noise. Known blind spot, accepted deliberately: a bare filename with no directory separator is not treated as a citation, because capabilities.json legitimately references a file in ANOTHER repository and the first revision reported it as fabrication. Whole-repo sweeps are the evidence that it does not cry wolf — re-run one after widening any pattern.",
+      "skip_when": "Nothing downstream acts on cited evidence, or reports never cite the repo."
+    },
+    {
+      "id": "surface-growth-tracking",
+      "status": "experimental",
+      "default": "off",
+      "summary": "Records product-code insertions per review round on a PR, so a diff that grows every round is visible as a divergence signal. Reports only; never blocks.",
+      "applies_when": "PRs go through repeated review rounds and you want the trajectory, not just the latest verdict.",
+      "detect": {
+        "path_exists": "reports"
+      },
+      "provides": [
+        "reports/surface-growth.js",
+        "reports/README.md"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #3, which measured that ~2/3 of blockers in one downstream review round were defects the PREVIOUS fix round introduced. Verified on fixtures: a genuinely growing PR reports growing; a STATIC PR against a base that gained 40 lines reports +1 rather than -40 (issue #3's own proposed two-dot command produces the latter); three reviewers on one SHA collapse to one round; an unresolvable round SHA yields indeterminate and exit 2 without interpolation. Cross-checked against raw git on this repo's real PR #8: product +65/-5, config +20/-4, matching git diff --numstat exactly.",
+      "cost": "One GitHub API call for reviews plus one git diff per round. Network and a token at run time — which is why it lives in reports/, not gates/.",
+      "caveat": "REPORT, NOT GATE, and --fail-on-divergence is opt-in for a reason: the streak threshold is issue #3's prose, not data from any repo, and blocking on an uncalibrated threshold is antipattern A12 aimed at the merge gate. A growing diff is also not reliably a defect — a fix that grows because review demanded tests is healthy, and a gate that fires on the healthy case gets disabled. Judgement uses PRODUCT insertions only: counting tests and docs would punish the correct fix for the consistency-debt class issue #3 says is ~1/4 of blockers. Unclassifiable files count as product, biasing toward reporting. A merged PR has merge-base == head so every round reads +0 by construction; that is reported indeterminate, not not-growing.",
+      "skip_when": "PRs merge after a single review round, so there is no trajectory to measure."
+    },
+    {
+      "id": "model-attribution",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Fails a range whose commits do not say which model produced them, or which name a model inconsistent with the manifest's model.current.",
+      "applies_when": "Agents commit to this repo and behavioural rules are tied to model versions.",
+      "detect": {
+        "manifest_set": "model.commit_trailer"
+      },
+      "provides": [
+        "gates/check-model-attribution.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 on owner instruction that each model's work be tagged with model and version for tracking and improvement. The pack already ties every behavioural severity to a model version — the rubric carries validated-against and check-rubric-validation.js fails on mismatch — but nothing established which model produced a given change. Verified: a commit with no trailer is caught, a trailer naming a different version is caught, a correctly attributed range passes, and --allow exempts human authors.",
+      "cost": "One git rev-list plus one git log per commit. No model, no network.",
+      "caveat": "Attribution, not authorship policing: a human commit is not a defect, so --allow <author> and a [skip-attribution] body marker exempt without weakening the rule for agent work. It checks only that the record SAYS which model produced the work, never what the model produced. An empty commit range FAILS CLOSED — reporting 'all attributable' over zero commits is the shape this pack refuses. Version matching is loose about punctuation (Claude Opus 5 vs claude-opus-5) and strict about presence, because a trailer omitting the version is exactly the case that cannot be traced after an upgrade.",
+      "skip_when": "No agent commits here, or the repo does not tie any rule to a model version."
+    },
+    {
+      "id": "render-equivalence",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Fails a subscriber whose rendered prompts and skills no longer equal render(template@pinned_version, local manifest), byte for byte.",
+      "applies_when": "The repo is a subscriber with a pack_version pin and a template checkout available.",
+      "detect": {
+        "manifest_set": "pack_version"
+      },
+      "provides": [
+        "gates/check-render-equivalence.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #12. Measured across both live subscribers: re-rendering each one's prompts AND skills from the template at its own pinned version, using that version's own renderer, against its own manifest, produced 12 of 12 files byte-identical, +0/-0. No subscriber carries any hand adaptation, so enforcing the invariant costs nothing today. Verified against fixtures for a single edited line, a removed render marker, a changed manifest value, a toggled capability, an empty repo and a missing template dir.",
+      "cost": "One render per file. No model, no network. Needs a template checkout at the pinned tag.",
+      "caveat": "SUBSCRIBER-SIDE ONLY — deliberately NOT in the template's own gate suite, where prompts/ IS the template source and a self-check compares a file to a render of itself. It refuses without --template-dir, and refuses when --template-dir resolves to --repo. It confirms the checkout against tag v<pin> rather than trusting VERSION: the first real run reported a HAND EDIT on factory-platform that was not one, because main's content had advanced past the version it named. A file with no render marker is a DECLARED OVERRIDE, listed and never counted as drift, matching scaffold.js's contract. Cause labels (NEVER RENDERED / CAPABILITY TOGGLED / MANIFEST CHANGED / HAND EDIT) are advisory; the verdict is always byte equality.",
+      "skip_when": "The repo is the template itself, or it has deliberately forked and diverged."
+    },
+    {
+      "id": "registry-prose-consistency",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Fails prose that asserts a capability's status or proven_in when capabilities.json says otherwise.",
+      "applies_when": "The repo documents its own capability registry in prose that can drift from it.",
+      "detect": {
+        "path_exists": "capabilities.json"
+      },
+      "provides": [
+        "gates/check-registry-prose.js"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-W31 from issue #13, which recorded THREE instances in one week of shipped prose contradicting the registry — each caught by a human reading both files at once. A fourth was found by the gate itself: records/director/2026-W31.md asserted eval-corpus was experimental with proven_in [], false when written and contradicted by finding D8 three sections later in the same document. Verified: 8 findings on a reconstruction of the known incidents, 0 on a known-negative carrying past-tense, quotation, adjectival and clause-boundary traps, and a clean whole-repo sweep.",
+      "cost": "Milliseconds. One registry read plus a scan of tracked markdown. No model, no network.",
+      "caveat": "BINDING IS NOT PROXIMITY — this is the whole design. A naive proximity window over this repo's 16 markdown files produced 10 id/status co-occurrences of which 7 were CORRECT prose, in four distinct shapes: two capabilities each with their own status in one sentence, past-tense narration of a fixed error, a record quoting a wrong claim to document it, and a correct restatement. Binding requires a closed list of present-tense connectives and rejects adjectival uses ('a mature approach'). records/ is NOT swept by default: a dated record saying 'X is experimental' is a statement about that week, and the only fix a gate could demand is falsifying history — use --include-records deliberately. Two forms were built, measured and REMOVED: 'no repo has run <id>' (every occurrence in this repo is scoped) and bare path citations (12 unresolved, all 12 false positives — the line number in check-citations.js is what turns a mention into a claim).",
+      "skip_when": "The registry is not restated in prose anywhere."
+    },
+    {
+      "id": "subscriber-roster",
+      "status": "experimental",
+      "default": "off",
+      "summary": "The pack declares which repos it manages (subscribers.json) and a gate derives each one's adoption state from that repo's integration branch every Director run — so \"who subscribes\" is never again inferred from whether a manifest happens to exist.",
+      "applies_when": "This repo IS the pack — it ships prompts/gates to other repositories. Subscribers never enable it.",
+      "requires": [],
+      "requires_path": [
+        "subscribers.json"
+      ],
+      "provides": [
+        "subscribers.json",
+        "subscribers.schema.json",
+        "gates/check-subscribers.js"
+      ],
+      "detect": {
+        "path_exists": "subscribers.json"
+      },
+      "originated_in": [],
+      "installed_in": [],
+      "evidence": "Built 2026-08-15 from a live incident: with no roster, propagation being pull, a repo that never pulled was invisible to every tool in the pack, and four consecutive Director passes reported clean while the two repos the pack was extracted TO MANAGE had never received a pack file. A Director then filed them as \"sources, not subscribers\" from the absence of a manifest. Designed with three independent approaches and six adversarial refutations before a line was written; every first-draft design read the subscriber's WORKING TREE and was defeated by it (sibling checkouts sit on whichever branch the last agent left — one showed pin 0.8.2 while its own origin/develop was at 0.8.4). The gate reads origin/<integration> only. Verified on day one: 2 ADOPTED (daily-nonogram, factory-platform via API), 4 OWED (the founders plus lifelift-android/ios), 1 self.",
+      "cost": "One gate run per Director pass (seconds; git show against remote-tracking refs, no network unless --fetch/--allow-network is passed). One roster line per subscriber in every weekly record. A roster PR whenever a repo is added or retired — never removed.",
+      "caveat": "STATUS IS DERIVED, NEVER DECLARED. There is no status field in the roster and the gate rejects one: a status a Director can type is a status every downstream reader trusts, and the incident was a Director's typed conclusion. IDS NEVER LEAVE — retire with a quote; CI fails on any id removed vs base. Measures the remote-tracking integration ref, never the tree; a stale fetch is red (FETCH_STALE), not a pass. NO_DIR is red on the host that lacks the checkout; --allow-network measures through the API and tags the line via=remote. If EVERY entry is unreachable the exit is 2 (mis-pointed instrument), not 1, because an all-red first run teaches the reader that red is background. What it cannot catch: a subscriber that keeps a manifest and rendered prompts at its integration ref but whose scheduled loop never actually runs them — presence is not execution; that is C1's job in THAT repo, and the pack Director's transcript spot-check.",
+      "skip_when": "You are a subscriber, not the pack."
+    },
+    {
+      "id": "escalation-hotline",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "A poke-only scheduler Routine (the 'Director hotline') that a blocked loop run fires on demand via fire_trigger, spawning a bounded triage session within minutes. The escalation-label issue stays the durable record; the hotline is the response.",
+      "applies_when": "The loop runs under a scheduler that exposes trigger tools (Claude Code Routines / claude-code-remote MCP) and a standing poke-only hotline Routine exists for the account.",
+      "detect": {
+        "manifest_set": "escalation.hotline_trigger_id"
+      },
+      "requires": [
+        "escalation.hotline_trigger_id"
+      ],
+      "originated_in": [],
+      "installed_in": [],
+      "provides": [],
+      "cost": "Nothing until fired; one triage session per distinct blocker when fired.",
+      "caveat": "The triage session's charter lives in the Routine, not this repo — it grants loop-level authority only (no governance files, no gate overrides, no owner decisions). Escalation text arrives in the triage session as an agent-authored message, never as owner sign-off. Fire once per distinct blocker, never per run it persists.",
+      "skip_when": "The loop runs in CI or any harness without scheduler trigger tools — the prompt section renders away and label-and-wait remains the escalation path.",
+      "evidence": "Built 2026-08-15 on owner direction ('Build', Director session) after the owner asked whether a blocked Routine session can engage the Director immediately rather than wait up to a week. Channel smoke-tested at creation: fire_trigger → fresh triage session → completion notification. No measured escalation outcomes yet — which is what experimental means."
+    },
+    {
+      "id": "pr-event-subscription",
+      "status": "experimental",
+      "default": "conditional",
+      "summary": "Loop runs and PR-owning sessions subscribe to PR activity so events (CI failure, review comment, conflict, close) drive the next action; the scheduled scan becomes the reconciliation path. Watching is subscription-first: one fallback check-in at ≥4h, never hourly chains.",
+      "applies_when": "The loop runs under a scheduler whose sessions receive PR webhooks (Claude Code Remote: subscribe_pr_activity). Bot-opened PRs no session owns still ride the scan until the webhook→fire_trigger bridge exists (see the roadmap issue).",
+      "detect": {
+        "manifest_set": "escalation.hotline_trigger_id"
+      },
+      "requires": [],
+      "originated_in": [],
+      "installed_in": [],
+      "provides": [],
+      "cost": "Nothing per run; each subscription wakes an idle session only when its PR has activity.",
+      "caveat": "detect reuses escalation.hotline_trigger_id as the harness signal — both capabilities exist only where the CCR scheduler tools do; a dedicated scheduler key can replace this if a second harness appears. Webhook delivery is best-effort (CI success and pushes can be missed), so the fallback check-in and the reconciliation scan are load-bearing, not vestigial.",
+      "skip_when": "The loop runs in CI or any harness without PR-activity subscriptions — the prompt section renders away and scan-only remains the path.",
+      "evidence": "Trigger census 2026-08-15: ~20 one-shot hourly check-in wakes in one day across watched PRs, nearly all no-ops, while the same sessions' PR subscriptions delivered the actionable events in minutes. Estimated 60–75% invocation reduction fleet-wide with events as fast path + 1×/day reconciliation. No measured week of coverage yet — which is what experimental means."
+    }
+  ]
+}

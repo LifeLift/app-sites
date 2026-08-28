@@ -1,0 +1,104 @@
+{
+  "$comment": "Path-aware gate config, read by gates/precommit.js (the pack's, at pack_version). REPO-OWNED. This is a static HTML/CSS site with no build, no test suite and no dependencies beyond the pack's js-yaml — every check listed here is one that actually runs on this host and in CI and can fail. Docs and text files deliberately map to zero checks.",
+  "categories": [
+    {
+      "id": "html",
+      "match": [
+        "\\.html?$"
+      ],
+      "checks": [
+        {
+          "name": "check-html",
+          "run": "node scripts/check-html.js {files}"
+        }
+      ]
+    },
+    {
+      "id": "css",
+      "match": [
+        "\\.css$"
+      ],
+      "checks": [
+        {
+          "name": "check-css",
+          "run": "node scripts/check-css.js {files}"
+        }
+      ]
+    },
+    {
+      "id": "machinery",
+      "match": [
+        "^gates/.*\\.js$",
+        "^scripts/.*\\.js$",
+        "^\\.claude/hooks/.*\\.js$"
+      ],
+      "checks": [
+        {
+          "name": "node-check",
+          "run": "node --check {file}",
+          "perFile": true
+        },
+        {
+          "name": "checker-self-tests",
+          "run": "node scripts/check-html.js --self-test && node scripts/check-css.js --self-test"
+        }
+      ]
+    },
+    {
+      "id": "workflows",
+      "match": [
+        "^\\.github/workflows/"
+      ],
+      "checks": [
+        {
+          "name": "carve-out-notice",
+          "run": "node gates/carve-out-paths.js --files {filelist}",
+          "warn": true
+        }
+      ]
+    },
+    {
+      "id": "governance",
+      "match": [
+        "^agent-loop\\.manifest\\.json$",
+        "^capabilities\\.json$",
+        "^precommit\\.config\\.json$",
+        "^cantfail-baseline\\.json$",
+        "^package\\.json$",
+        "^agent-loop\\.manifest\\.schema\\.json$",
+        "^\\.claude/settings\\.json$",
+        "^package-lock\\.json$"
+      ],
+      "checks": [
+        {
+          "name": "json-parses",
+          "run": "node -e \"process.argv.slice(1).forEach(f => JSON.parse(require('fs').readFileSync(f, 'utf8')))\" {files}"
+        },
+        {
+          "name": "check-capabilities",
+          "run": "node gates/check-capabilities.js --repo . --manifest agent-loop.manifest.json"
+        }
+      ]
+    },
+    {
+      "id": "docs",
+      "match": [
+        "\\.md$",
+        "\\.txt$",
+        "^CNAME$",
+        "^\\.gitignore$",
+        "^\\.nojekyll$"
+      ],
+      "checks": []
+    }
+  ],
+  "always": [
+    {
+      "name": "cantfail",
+      "run": "node gates/detect-cantfail-tests.js"
+    }
+  ],
+  "fallback": {
+    "checks": []
+  }
+}
