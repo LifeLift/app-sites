@@ -19,20 +19,17 @@
   </header>
 
   <main id="main">
-    <div class="draft" role="status">
-      <p>DRAFT — pending owner review. This text is not yet in effect. Items marked <span class="owner">[[OWNER: …]]</span> are for the publisher to confirm or fill in.</p>
-    </div>
 
     <h1>Wickstacks Privacy Policy</h1>
     <p class="lede">Wickstacks — Daily Nonogram (“Wickstacks”, “the app”) is published by Lifelift Software, Inc. (“we”, “us”). This policy explains, in plain language, what the app does with information about you.</p>
 
     <dl class="meta">
       <dt>Effective date</dt>
-      <dd><span class="owner">[[OWNER: effective date]]</span></dd>
+      <dd>August 28, 2026</dd>
       <dt>Applies to</dt>
       <dd>the Wickstacks app for iOS and Android</dd>
       <dt>Contact</dt>
-      <dd><a href="mailto:support@lifelift.app">support@lifelift.app</a> <span class="owner">[[OWNER: confirm this is the monitored support address]]</span></dd>
+      <dd><a href="mailto:support@lifelift.app">support@lifelift.app</a></dd>
     </dl>
 
     <h2 id="summary">The short version</h2>
@@ -59,7 +56,7 @@
     </ul>
 
     <h3>Sign in with Apple (optional, iOS only)</h3>
-    <p>If you choose <em>Sign in with Apple</em>, the app links your anonymous player identifier to your Apple ID so the same identifier can be restored on another device. The app requests your name and email from Apple as part of that sign-in flow; the app itself does not store your name. Apple lets you hide your real email address and share a relay address instead. <span class="owner">[[OWNER: confirm what Firebase Authentication retains from the Apple credential (Apple user identifier; email or relay email) — check the Firebase console user record and state it here]]</span></p>
+    <p>If you choose <em>Sign in with Apple</em>, the app links your anonymous player identifier to your Apple ID so the same identifier can be restored on another device. The app requests your name and email from Apple as part of that sign-in flow; the app itself does not store your name. Apple lets you hide your real email address and share a relay address instead. Firebase Authentication retains your Apple user identifier and the email address Apple provides at sign-in — your real address or, if you chose “Hide My Email”, Apple’s private-relay address.</p>
 
     <h3>Data that stays on your device</h3>
     <p>The app keeps the following on your device only, in the app’s private storage: the current puzzle board state, your solve history (puzzle date and time for each day you solved), streak-restore records, whether you have finished the tutorial, a count of how often you opened the puzzle shelf, whether the app has already asked about tracking (iOS), and your Firebase sign-in session. None of this is sent to us. Deleting the app deletes it.</p>
@@ -95,17 +92,17 @@
     <ul>
       <li>The app shows a banner ad and, after you finish a puzzle, an interstitial ad, both served by Google AdMob.</li>
       <li>The app asks AdMob for <strong>non-personalised ads only</strong>, regardless of any other setting.</li>
-      <li><strong>EEA, UK and Switzerland:</strong> before any ad is requested, the app shows Google’s consent form (User Messaging Platform). If you do not consent, ads may not be shown; the puzzle works either way. You can change your choice later <span class="owner">[[OWNER: state where — the app currently exposes no in-app “privacy options” button; either add one (the SDK provides showPrivacyOptionsForm) or tell users to reinstall / contact support]]</span>.</li>
+      <li><strong>EEA, UK and Switzerland:</strong> before any ad is requested, the app shows Google’s consent form (User Messaging Platform). If you do not consent, ads may not be shown; the puzzle works either way. You can change your choice later by deleting and reinstalling the app, or by contacting support.</li>
       <li><strong>iOS:</strong> after you finish your first puzzle, the app asks once for permission to track (App Tracking Transparency). Saying no changes nothing about how the app works. You can change the answer at any time in <em>Settings → Privacy &amp; Security → Tracking</em>.</li>
       <li>You can also reset or limit your device’s advertising identifier in your device settings (iOS: <em>Settings → Privacy &amp; Security → Apple Advertising</em>; Android: <em>Settings → Google → Ads</em>).</li>
     </ul>
 
     <h2 id="children">Children</h2>
-    <p>Wickstacks is not directed at children under 13, and it does not participate in Apple’s Kids category or Google Play’s Designed for Families programme. We do not knowingly collect information from children under 13. If you believe a child has used the app and you would like their data removed, contact us and we will delete it. <span class="owner">[[OWNER: confirm the store age rating you will declare (e.g. 4+ / Everyone) and whether any jurisdiction-specific age threshold (e.g. 16 in parts of the EU) should be named]]</span></p>
+    <p>Wickstacks is not directed at children under 13, and it does not participate in Apple’s Kids category or Google Play’s Designed for Families programme. We do not knowingly collect information from children under 13. If you believe a child has used the app and you would like their data removed, contact us and we will delete it. The app’s declared store age rating is 4+ on the App Store and Everyone on Google Play.</p>
 
     <h2 id="retention">How long we keep data</h2>
     <ul>
-      <li><strong>Solve-time records</strong> are kept indefinitely — the app currently has no expiry for them — until you ask us to delete your account, or <span class="owner">[[OWNER: state any retention period you decide on, e.g. “N months after your last solve”]]</span>.</li>
+      <li><strong>Solve-time records</strong> are kept indefinitely — the app currently has no expiry for them — until you ask us to delete your account.</li>
       <li><strong>Your player identifier</strong> (the Firebase Authentication account) is kept until you ask us to delete it.</li>
       <li><strong>On-device data</strong> is kept until you delete the app or clear its storage.</li>
       <li>Google’s retention of advertising and consent data is governed by Google’s policies linked above.</li>
@@ -120,25 +117,26 @@
       <li><strong>Delete your account and data.</strong> See <a href="../delete-account/">Delete your account and data</a>.</li>
       <li><strong>Access or correct.</strong> Ask us at the contact address and we will tell you what we hold against your identifier. Note that solve-time records cannot be edited once written; they can only be deleted.</li>
     </ul>
-    <p><span class="owner">[[OWNER: decide whether to add region-specific rights language (EU/UK GDPR: legal basis, data-subject rights, supervisory-authority complaint; California CPRA: categories, “do not sell or share”). Not drafted here because it is a legal-review question, not a fact about the app.]]</span></p>
+    <p>Depending on where you live, you may have additional legal rights over your personal data — such as access, correction, deletion, portability, and the right to complain to a supervisory authority. To exercise any of them, contact us at the address below and we will honour the request as applicable law requires.</p>
 
     <h2 id="deletion">Account deletion</h2>
     <p>You can have your player identifier and all solve-time records attached to it deleted. The steps are on the <a href="../delete-account/">Delete your account and data</a> page.</p>
 
     <h2 id="security">Security</h2>
-    <p>Data in transit between the app and Google’s services is encrypted (TLS). Solve-time records are protected by database rules that allow a player to write only their own record for the current day, once, and allow no edits or deletions by anyone through the app. No system is perfectly secure; if we learn of a breach affecting your data we will act as the law requires. <span class="owner">[[OWNER: confirm breach-notification wording with legal review]]</span></p>
+    <p>Data in transit between the app and Google’s services is encrypted (TLS). Solve-time records are protected by database rules that allow a player to write only their own record for the current day, once, and allow no edits or deletions by anyone through the app. No system is perfectly secure; if we learn of a breach affecting your data we will notify affected users and the relevant authorities without undue delay, as applicable law requires.</p>
 
     <h2 id="changes">Changes to this policy</h2>
-    <p>If we change this policy we will update the effective date at the top of this page and, for material changes, tell you in the app or on this site before the change takes effect. <span class="owner">[[OWNER: confirm how material changes will be announced — the app currently has no notice mechanism]]</span></p>
+    <p>If we change this policy we will update the effective date at the top of this page and, for material changes, post a notice on this page before the change takes effect.</p>
 
     <h2 id="contact">Contact</h2>
     <p>Lifelift Software, Inc.<br>
-      <span class="owner">[[OWNER: legal entity postal address — required by some app stores and jurisdictions]]</span><br>
-      <a href="mailto:support@lifelift.app">support@lifelift.app</a> <span class="owner">[[OWNER: confirm address]]</span></p>
+      30 N Gould St #10502<br>
+      Sheridan, WY 82801, USA<br>
+      <a href="mailto:support@lifelift.app">support@lifelift.app</a></p>
   </main>
 
   <footer class="site">
-    <p><a href="../../">LifeLift Software</a> · <a href="../">Wickstacks</a> · © <span class="owner">[[OWNER: year]]</span> Lifelift Software, Inc.</p>
+    <p><a href="../../">LifeLift Software</a> · <a href="../">Wickstacks</a> · © 2026 Lifelift Software, Inc.</p>
   </footer>
 </body>
 </html>
