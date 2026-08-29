@@ -42,11 +42,12 @@ one CSS file. No build, no JavaScript, no test suite, no external assets.
 
 - `main` is the live GitHub Pages site (source: branch `main`, path `/`). `develop` is
   staging with no deploy — nothing on it is visible anywhere.
-- The `CNAME` file names the custom domain `wickstacks.lifelift.app` for the Wickstacks
-  pages. Until that DNS record exists and the Pages custom domain is accepted, the site
-  root is served on the org's default Pages domain (`lifelift.github.io/app-sites/`).
-  Absolute links between pages must therefore be **relative** — they have to work under
-  both a `/app-sites/` prefix and a bare custom domain.
+- The `CNAME` file names the custom domain `wickstacks.lifelift.app`, which is **live**:
+  domain verified, certificate approved, HTTPS enforced (GitHub Pages API), and the org
+  default domain (`lifelift.github.io/app-sites/`) now **301-redirects** there rather
+  than serving content (both probed 2026-08-29, W35 Director pass). Links between pages
+  stay **relative** anyway: if the custom domain is ever removed, serving falls back to
+  the `/app-sites/`-prefixed default domain, and relative links survive both shapes.
 - Privacy and account-deletion text merges to `main` only on owner sign-off
   (`needs-prod-review`, `escalation.human_gate_scope: production`).
 - `app-ads.txt` here serves the subdomain only; the IAB-required copy at the registrable
