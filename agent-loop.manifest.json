@@ -53,12 +53,14 @@
     "human_gate_label": "needs-prod-review",
     "blocked_when_open": [],
     "log_issue": 1,
-    "human_gate_scope": "production",
-    "hotline_trigger_id": "trig_0184dk7KYXYZ2Jhgk7SHzBH5"
+    "human_gate_scope": "production"
   },
   "model": {
-    "current": "claude-fable-5",
-    "commit_trailer": "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+    "current": "claude-sonnet-5",
+    "commit_trailer": "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>",
+    "accepted": [
+      "claude-fable-5"
+    ]
   },
   "capabilities": {
     "session-orientation-hook": true,
@@ -71,7 +73,7 @@
     "cantfail-gate": true,
     "shared-clone-guard": true,
     "adversarial-internal-review": true,
-    "escalation-hotline": true,
+    "escalation-hotline": false,
     "pack-sync": false,
     "skill-frontmatter-gate": false,
     "real-execution-tier": false,
