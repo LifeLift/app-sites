@@ -12,7 +12,7 @@
     "integration": "develop",
     "production": "main",
     "integration_deploys_to": "nothing — main is the live GitHub Pages site; develop is staging with no deploy",
-    "production_deploys_to": "GitHub Pages (source: main, path /), custom domain wickstacks.lifelift.app once DNS resolves"
+    "production_deploys_to": "GitHub Pages (source: main, path /), served at the custom domain wickstacks.lifelift.app (verified, HTTPS enforced; the org default Pages domain 301-redirects there — checked 2026-08-29)"
   },
   "commands": {
     "gate": {
