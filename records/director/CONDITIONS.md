@@ -23,7 +23,9 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   or (b) the owner explicitly accepts the risk — then re-presented quarterly instead of
   weekly.
 - **History:** W35 CHECKED-OK — risk stands, presented to owner as an option (record,
-  owner action list); no monitor exists yet.
+  owner action list); no monitor exists yet. W36 CHECKED-OK — still no monitor; the
+  3-day host outage sharpened the case: Pages kept serving because it is independent of
+  the host, and for the same reason nothing anywhere watched it (2026-W36 record).
 
 ### R2 — Apple-credential retention spot-check
 - **What:** the privacy page states Firebase retains the Apple user identifier plus
@@ -35,7 +37,8 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   a mismatch is a privacy-page correction PR under the content tripwire (evidence from
   the app's source/console, owner sign-off to reach `main`).
 - **Kill criteria:** retired once verified against one real record (result logged here).
-- **History:** W35 NOT-YET-DUE — no Apple-provider user known to exist.
+- **History:** W35 NOT-YET-DUE — no Apple-provider user known to exist. W36 NOT-YET-DUE
+  — unchanged.
 
 ### R3 — legal review before scale
 - **What:** regional-rights and breach-notification wording is minimal generic text,
@@ -45,7 +48,8 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
 - **Remedy when TRIGGERED:** escalate as an owner question with its age; the pages carry
   the owner-accepted wording until the owner's counsel changes it.
 - **Kill criteria:** retired when legal review happens (wording confirmed or replaced).
-- **History:** W35 NOT-YET-DUE — accepted 1 day ago; no scale activity.
+- **History:** W35 NOT-YET-DUE — accepted 1 day ago; no scale activity. W36 NOT-YET-DUE
+  — no scale activity; next re-present ~W48.
 
 ### R4 — loop cadence right-sizing
 - **What:** daily loop against a 1-issue backlog is generous; premature to act on one
@@ -58,22 +62,22 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
 - **Kill criteria:** retired if the backlog grows to a steady 3+ open issues (cadence is
   then earning itself) or after a cadence change is made and scored for two weeks.
 - **History:** W35 NOT-YET-DUE — queue is 1 issue and the loop was blocked all week.
-
-### R5 — model-routing fix verification
-- **What:** PR #7 set `model.current: claude-sonnet-5` per DELIVERY-PROCESS §3; the loop
-  renders from `origin/develop` at run time, so the next run should clear the attribution
-  block with **no scheduler change**.
-- **Check, due 2026-08-30:** did that loop run complete Stage 1/Stage 3 eligibility
-  without the model block? (Its log entry on #1 states the model and the stages run.)
-- **Remedy:** if clear — close #5 citing the run. If blocked again — next week's
-  headline; re-diagnose (the scheduler may be supplying a third model).
-- **Kill criteria:** self-retiring on first verification either way (result logged here
-  and on #5).
-- **History:** W35 NOT-YET-DUE — fix merged this pass; first eligible run 2026-08-30.
+  W36 NOT-YET-DUE — queue still 1 issue (#4, owner-gated); the three missed days were
+  host outage, not no-op runs, and do not count toward the trigger (2026-W36 record).
 
 ## Retired rows
 
-*(none yet)*
+### R5 — model-routing fix verification (RETIRED W36 — verified)
+- **What it was:** PR #7 set `model.current: claude-sonnet-5` per DELIVERY-PROCESS §3;
+  the loop renders from `origin/develop` at run time, so the next run should clear the
+  attribution block with no scheduler change. Self-retiring on first verification.
+- **Result:** verified twice. Loop run 3 (2026-08-29, log on #1) executed as
+  `claude-sonnet-5`, authored a real commit and PR (#9) under a matching trailer with no
+  block, and closed #5 under the close rule stated on that issue; run 4 (2026-09-02)
+  re-confirmed on a second day and merged #9. Retired per kill criteria (2026-W36
+  record).
+- **History:** W35 NOT-YET-DUE — fix merged that pass; first eligible run 2026-08-30.
+  W36 RETIRED — verified as above.
 
 ## Register retirement row
 
