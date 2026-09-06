@@ -91,15 +91,6 @@ th, td { text-align: left; vertical-align: top; padding: .5rem .5rem; border-bot
 th { font-weight: 600; }
 .table-wrap { overflow-x: auto; }
 
-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: .92em;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: .25rem;
-  padding: 0 .3em;
-}
-
 dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; }
 dl.meta dt { font-weight: 600; }
 dl.meta dd { margin: 0; }
