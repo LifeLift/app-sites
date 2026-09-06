@@ -1,9 +1,9 @@
 # app-sites
 
-Public web pages for **LifeLift Software** apps, served by GitHub Pages: privacy policies,
-account-deletion instructions, and the developer landing site.
+Public web pages for **LifeLift Software** apps, served by GitHub Pages: privacy policies
+and account-deletion instructions.
 
-The first app covered is **Wickstacks — Daily Nonogram** (`wickstacks/`).
+The first app covered is **Wickstacks — Daily Nonogram**, served at the site root.
 
 ## Branches and promotion
 
@@ -17,8 +17,8 @@ The first app covered is **Wickstacks — Daily Nonogram** (`wickstacks/`).
 ## Layout
 
 ```
-index.html                       developer site landing
-wickstacks/index.html            Wickstacks app page
+index.html                       Wickstacks app page (site root)
+wickstacks/index.html            redirect stub → site root (kept for existing deep links)
 wickstacks/privacy/              privacy policy
 wickstacks/delete-account/       account & data deletion instructions
 assets/site.css                  shared stylesheet (no JS, no external assets)
