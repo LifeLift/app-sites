@@ -26,6 +26,9 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   owner action list); no monitor exists yet. W36 CHECKED-OK — still no monitor; the
   3-day host outage sharpened the case: Pages kept serving because it is independent of
   the host, and for the same reason nothing anywhere watched it (2026-W36 record).
+  W37 CHECKED-OK — still no monitor; a third unwatched window (account weekly-limit
+  outage 09-07→09-10); site probed live by the pass, all three key URLs HTTP 200
+  (2026-W37 record).
 
 ### R2 — Apple-credential retention spot-check
 - **What:** the privacy page states Firebase retains the Apple user identifier plus
@@ -38,7 +41,7 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   the app's source/console, owner sign-off to reach `main`).
 - **Kill criteria:** retired once verified against one real record (result logged here).
 - **History:** W35 NOT-YET-DUE — no Apple-provider user known to exist. W36 NOT-YET-DUE
-  — unchanged.
+  — unchanged. W37 NOT-YET-DUE — unchanged.
 
 ### R3 — legal review before scale
 - **What:** regional-rights and breach-notification wording is minimal generic text,
@@ -49,7 +52,7 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   the owner-accepted wording until the owner's counsel changes it.
 - **Kill criteria:** retired when legal review happens (wording confirmed or replaced).
 - **History:** W35 NOT-YET-DUE — accepted 1 day ago; no scale activity. W36 NOT-YET-DUE
-  — no scale activity; next re-present ~W48.
+  — no scale activity; next re-present ~W48. W37 NOT-YET-DUE — no scale activity.
 
 ### R4 — loop cadence right-sizing
 - **What:** daily loop against a 1-issue backlog is generous; premature to act on one
@@ -64,6 +67,11 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
 - **History:** W35 NOT-YET-DUE — queue is 1 issue and the loop was blocked all week.
   W36 NOT-YET-DUE — queue still 1 issue (#4, owner-gated); the three missed days were
   host outage, not no-op runs, and do not count toward the trigger (2026-W36 record).
+  W37 NOT-YET-DUE — #4's implementation merged (awaits promotion only); runs 5 and 8
+  were honest no-op fallbacks, runs 6–7 shipped — not 3 consecutive; the four missed
+  days (host outage 09-03, weekly-limit deaths 09-07/09-09, host quiet 09-08) do not
+  count. The W37 pass filed #15 (nav-drift), so the queue holds one loop-workable
+  issue after #4 closes (2026-W37 record).
 
 ## Retired rows
 
