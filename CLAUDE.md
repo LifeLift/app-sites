@@ -1,8 +1,9 @@
 # app-sites
 
 Public static web pages for LifeLift Software apps — privacy policies, account-deletion
-instructions, the developer landing site — served by GitHub Pages. Hand-written HTML and
-one CSS file. No build, no JavaScript, no test suite, no external assets.
+instructions, the Wickstacks app page at the site root — served by GitHub Pages.
+Hand-written HTML and one CSS file. No build, no JavaScript, no test suite, no external
+assets.
 
 ## Branches
 
