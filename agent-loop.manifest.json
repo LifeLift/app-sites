@@ -12,7 +12,7 @@
     "integration": "develop",
     "production": "main",
     "integration_deploys_to": "nothing — main is the live GitHub Pages site; develop is staging with no deploy",
-    "production_deploys_to": "GitHub Pages (source: main, path /), custom domain wickstacks.lifelift.app once DNS resolves"
+    "production_deploys_to": "GitHub Pages (source: main, path /), served at the custom domain wickstacks.lifelift.app (verified, HTTPS enforced; the org default Pages domain 301-redirects there — checked 2026-08-29)"
   },
   "commands": {
     "gate": {
@@ -53,12 +53,14 @@
     "human_gate_label": "needs-prod-review",
     "blocked_when_open": [],
     "log_issue": 1,
-    "human_gate_scope": "production",
-    "hotline_trigger_id": "trig_0184dk7KYXYZ2Jhgk7SHzBH5"
+    "human_gate_scope": "production"
   },
   "model": {
-    "current": "claude-fable-5",
-    "commit_trailer": "Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
+    "current": "claude-sonnet-5",
+    "commit_trailer": "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>",
+    "accepted": [
+      "claude-fable-5"
+    ]
   },
   "capabilities": {
     "session-orientation-hook": true,
@@ -71,7 +73,7 @@
     "cantfail-gate": true,
     "shared-clone-guard": true,
     "adversarial-internal-review": true,
-    "escalation-hotline": true,
+    "escalation-hotline": false,
     "pack-sync": false,
     "skill-frontmatter-gate": false,
     "real-execution-tier": false,
