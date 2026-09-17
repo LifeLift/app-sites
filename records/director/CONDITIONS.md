@@ -82,17 +82,17 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
 
 ### R6 — Director schedule-move verification (self-retiring)
 - **What:** the W38 pass moved `director-weekly-app-sites` from Monday 09:22 to
-  Wednesday 09:22 local, because the account weekly limit resets Wednesdays 4am PT and
+  Thursday 09:22 local, because the account weekly limit resets Thursdays 4am PT and
   both the W37 and W38 Monday firings died on the exhausted budget (2026-W38 record;
   restore string in the task description).
-- **Check, weekly:** did the 2026-09-24 Wednesday firing complete a full pass without
+- **Check, weekly:** did the 2026-09-24 Thursday firing complete a full pass without
   manual re-trigger? Verify from `list_task_runs` (a succeeded run entry on 09-24) and
   the W39 record's own existence.
-- **Remedy when TRIGGERED (the Wednesday firing dies on the limit again):** the
+- **Remedy when TRIGGERED (the Thursday firing dies on the limit again):** the
   reset-day assumption is wrong or the budget exhausts within a day of reset — escalate
   to the owner as part of the fleet-capacity question with this new evidence; consider
   restoring the original schedule since the move buys nothing.
-- **Kill criteria:** retired on first verified on-schedule Wednesday completion (result
+- **Kill criteria:** retired on first verified on-schedule Thursday completion (result
   logged here).
 - **History:** W38 registered — first eligible firing 2026-09-24.
 
