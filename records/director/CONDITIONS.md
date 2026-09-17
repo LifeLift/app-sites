@@ -28,7 +28,9 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   the host, and for the same reason nothing anywhere watched it (2026-W36 record).
   W37 CHECKED-OK — still no monitor; a third unwatched window (account weekly-limit
   outage 09-07→09-10); site probed live by the pass, all three key URLs HTTP 200
-  (2026-W37 record).
+  (2026-W37 record). W38 CHECKED-OK — still no monitor; a fourth unwatched window
+  (limit suppression 09-14→09-17); all three key URLs probed HTTP 200; root serves the
+  promoted Wickstacks page, #19 nav fix correctly not yet live (2026-W38 record).
 
 ### R2 — Apple-credential retention spot-check
 - **What:** the privacy page states Firebase retains the Apple user identifier plus
@@ -41,7 +43,7 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   the app's source/console, owner sign-off to reach `main`).
 - **Kill criteria:** retired once verified against one real record (result logged here).
 - **History:** W35 NOT-YET-DUE — no Apple-provider user known to exist. W36 NOT-YET-DUE
-  — unchanged. W37 NOT-YET-DUE — unchanged.
+  — unchanged. W37 NOT-YET-DUE — unchanged. W38 NOT-YET-DUE — unchanged.
 
 ### R3 — legal review before scale
 - **What:** regional-rights and breach-notification wording is minimal generic text,
@@ -53,6 +55,7 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
 - **Kill criteria:** retired when legal review happens (wording confirmed or replaced).
 - **History:** W35 NOT-YET-DUE — accepted 1 day ago; no scale activity. W36 NOT-YET-DUE
   — no scale activity; next re-present ~W48. W37 NOT-YET-DUE — no scale activity.
+  W38 NOT-YET-DUE — no scale activity.
 
 ### R4 — loop cadence right-sizing
 - **What:** daily loop against a 1-issue backlog is generous; premature to act on one
@@ -71,7 +74,27 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   were honest no-op fallbacks, runs 6–7 shipped — not 3 consecutive; the four missed
   days (host outage 09-03, weekly-limit deaths 09-07/09-09, host quiet 09-08) do not
   count. The W37 pass filed #15 (nav-drift), so the queue holds one loop-workable
-  issue after #4 closes (2026-W37 record).
+  issue after #4 closes (2026-W37 record). W38 NOT-YET-DUE — approaching: runs 11/12
+  were honest no-ops on a non-empty queue (#15 held for promotion, correctly — do not
+  count); once #15 closes on promotion the queue is empty and three consecutive no-ops
+  plausibly land by W39. Remedy is pre-agreed — the W39 pass executes the cadence halve
+  without re-deliberation if the trigger is met (2026-W38 record).
+
+### R6 — Director schedule-move verification (self-retiring)
+- **What:** the W38 pass moved `director-weekly-app-sites` from Monday 09:22 to
+  Wednesday 09:22 local, because the account weekly limit resets Wednesdays 4am PT and
+  both the W37 and W38 Monday firings died on the exhausted budget (2026-W38 record;
+  restore string in the task description).
+- **Check, weekly:** did the 2026-09-24 Wednesday firing complete a full pass without
+  manual re-trigger? Verify from `list_task_runs` (a succeeded run entry on 09-24) and
+  the W39 record's own existence.
+- **Remedy when TRIGGERED (the Wednesday firing dies on the limit again):** the
+  reset-day assumption is wrong or the budget exhausts within a day of reset — escalate
+  to the owner as part of the fleet-capacity question with this new evidence; consider
+  restoring the original schedule since the move buys nothing.
+- **Kill criteria:** retired on first verified on-schedule Wednesday completion (result
+  logged here).
+- **History:** W38 registered — first eligible firing 2026-09-24.
 
 ## Retired rows
 
