@@ -94,7 +94,11 @@ Retired section with the reason), never silently dropped. The pack's fixed condi
   restoring the original schedule since the move buys nothing.
 - **Kill criteria:** retired on first verified on-schedule Thursday completion (result
   logged here).
-- **History:** W38 registered — first eligible firing 2026-09-24.
+- **History:** W38 registered — first eligible firing 2026-09-24. W38 same-day
+  addendum: the retiming day itself double-fired (the corrected cron's first occurrence,
+  09:22 PDT, still lay ahead when set ~07:00 PDT; host-sleep catch-up dispatched it
+  22:57 PDT); the duplicate session ran no second pass (2026-W38 record, addendum).
+  Evidence the Thursday cron is live; verification still rests on 2026-09-24.
 
 ## Retired rows
 
