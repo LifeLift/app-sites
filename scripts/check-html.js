@@ -50,10 +50,7 @@ function checkHtml(src, name) {
   const n = src.length;
   while (i < n) {
     const lt = src.indexOf('<', i);
-    if (lt === -1) {
-      if (/[<]/.test(src.slice(i))) err(i, 'stray "<" in text');
-      break;
-    }
+    if (lt === -1) break;
     // text between i and lt: nothing to check except a stray '>' is fine in HTML
     i = lt;
     if (src.startsWith('<!--', i)) {
@@ -98,9 +95,6 @@ function checkHtml(src, name) {
       const am = /^([^\s"'>\/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/.exec(src.slice(j));
       if (!am) { err(j, `malformed attribute in <${tag}> near ${JSON.stringify(src.slice(j, j + 20))}`); ok = false; break; }
       const aname = am[1].toLowerCase();
-      if (am[0].includes('=') && am[2] === undefined && am[3] === undefined && am[4] === undefined) {
-        err(j, `attribute ${aname} in <${tag}> has "=" but no value`); ok = false; break;
-      }
       const val = am[2] !== undefined ? am[2] : am[3] !== undefined ? am[3] : am[4] !== undefined ? am[4] : '';
       if (am[4] !== undefined) err(j, `attribute ${aname}="${val}" in <${tag}> must be quoted`);
       if (aname in attrs) err(j, `duplicate attribute ${aname} in <${tag}>`);
